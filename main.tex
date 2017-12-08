@@ -530,6 +530,85 @@ and would solve the duplication effect.
   \end{itemize}
 \end{itemize}
 
+\section{Counter-example}
+
+Found a counter-example which invalidate the algorithm proposed in section \ref{sec:usage}.
+We replay the same operations as in previous examples but in this case:
+\begin{itemize}
+  \item $localOp_2$ and $localOp_3$ are concurrent
+  \item The generated identifiers $id_2$ and $id_3$ are in this order: $id_2 < id_3$
+\end{itemize}
+In this scenario, when replaying $localOp_3$ at step \ref{itm:replay-local-op},
+we will swap the position of the elements $elt_2$ and $elt_3$
+compared to the previously observed state.
+This result in a incoherence of the system and may result in the violation
+of the intention of following operations based on this previously observed state.
+This scenario is represented by figure \ref{fig:incoherent-replay-local-op}.
+
+\begin{figure}[h]
+  \begin{tikzpicture}[
+    localOp/.style={->, thick, shorten <=3pt, shorten >=3pt},
+    remoteOp/.style={->, dotted, thick, shorten <=3pt, shorten >=3pt},
+    trait/.style={fill, rectangle, xscale=0.1},
+    medium/.style={scale=0.85}]
+
+    \newcommand{\sOne}{$[(id_1, elt_1)]$}
+    \newcommand{\sTwo}{$[(id_1, elt_1), (id_2, elt_2)]$}
+    \newcommand{\sThree}{$[(id_1, elt_1), (id_3, elt_3)]$}
+    \newcommand{\sFour}{$[(id'_1, elt_1), (id'_2, elt_2)]$}
+    \newcommand{\sFive}{$[(id_1, elt_1), (id_2, elt_2), (id_3, elt_3)]$}
+    \newcommand{\sSix}{$[(id'_1, elt_1), (id'_3, elt_3), (id'_2, elt_2)]$}
+
+    \node (A) at (0, 0) {node A};
+    \node[right=5pt of A] (beginA) {};
+    \node[trait, right=of beginA] (S1A) {};
+    \drawState{S1A}{above}{$S_1$}{\sOne}{$L_1$}{1/1};
+    \node[trait, right=3 of S1A] (S2A) {};
+    \drawState{S2A}{above}{$S_2$}{\sTwo}{$L_2$}{1/1, 2/2};
+    \node[trait, right=7 of S2A] (S4A) {};
+    \drawState{S4A}{above}{$S_4$}{\sFour}{$L_4$}{1/1, 2/2, 4/4};
+    \node[right=15 of A] (endA) {};
+
+    \node (B) at (0, -3) {node B};
+    \node[right=5pt of B] (beginB) {};
+    \node[trait, right=of beginB] (S1B) {};
+    \node[below=1pt of S1B] {$S_1$};
+    \node[trait, right=3 of S1B] (S3B) {};
+    \node[below=1pt of S3B] {$S_3$};
+    \node[trait, right=3 of S3B] (S5B) {};
+    \drawState{S5B}{below}{$S_5$}{\sFive}{$L_5$}{1/1, 3/3, 2/2}
+    \node[trait, right=7 of S5B] (receivedOp4B) {};
+    \node[right=15 of B] (endB) {};
+
+    \node[align=center] (zoomB) at (0, -9) {zoom on \\node B};
+    \node[right=5pt of zoomB] (beginZoomB) {};
+    \node[trait, right=of beginZoomB] (SBlank) {};
+    \node[below=1pt of SBlank] {$S_{blank}$};
+    \node[trait, right=4 of SBlank] (S4B) {};
+    \drawState{S4B}{below}{$S_4$}{\sFour}{$L_4$}{1/1, 2/2, 4/4};
+    \node[trait, right=7 of S4B] (S6B) {};
+    \drawState{S6B}{below}{$S_6$}{\sSix}{$L_6$}{1/1, 2/2, 4/4, 3'/3}
+    \node[right=15 of beginZoomB] (endZoomB) {};
+
+    \draw[->] (beginA) -- (endA);
+    \draw[->] (beginB) -- (endB);
+    \draw[->] (beginZoomB) -- (endZoomB);
+    \draw[localOp] (S1A) to[out=-15, in=195] node[below, medium, align=center] {$localOp_2=$\\$addLocal(1, elt_2)$} (S2A);
+    \draw[localOp] (S2A) to[out=-15, in=195] node[below, medium, xshift=25pt, align=center] {$localOp_4=$\\$renameLocal(id_1 \rightarrow id'_1, id_2 \rightarrow id'_2)$} (S4A);
+
+    \draw[localOp] (S1B) to[out=15, in=165] node[above, medium] {$localOp_3 = addLocal(1, elt_3)$} (S3B);
+    \draw[->, dotted] (receivedOp4B) -- (beginZoomB);
+    \draw[->, dotted, shorten >=3pt] (endZoomB) -- (receivedOp4B);
+    \draw[remoteOp] (S2A) -- node[near end, right, xshift=10pt, medium] {$remoteOp_2$} (S5B);
+    \draw[remoteOp] (S4A) -- node[near end, right, xshift=10pt, medium] {$remoteOp_4$} (receivedOp4B);
+    \draw[localOp] (SBlank) to[out=15, in=165] node[above, medium, align=center] {$remoteOp_1$\\$remoteOp_2$\\$remoteOp_4$} (S4B);
+    \draw[localOp] (S4B) to[out=15, in=165] node[above, medium] {$localOp_3$} (S6B);
+
+  \end{tikzpicture}
+  \caption{Incoherence occuring by replaying local operations during renaming process}
+  \label{fig:incoherent-replay-local-op}
+\end{figure}
+
 \bibliography{ref-selected}
 
 \end{document}
