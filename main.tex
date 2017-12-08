@@ -333,6 +333,7 @@ An example of the lifecycle of such a replicated data structure is shown in figu
 \end{itemize}
 
 \subsection{Usage}
+\label{sec:usage}
 
 Given an operation $renameRemote(S, L, mapIds, cc_{S'})$,
 resulting from the execution of $renameLocal(S')$ on another node,
@@ -352,7 +353,9 @@ we have to perform the following steps to apply it:
   \item For each entry $(remoteOp, localOp)$ of $L_{concurrent}$
   \begin{enumerate}
     \item Update state $S"$ by performing $localOp(S"_{prev}) = (S"_{new}, metadata)$
+    \label{itm:replay-local-op}
     \item Build new remote operation $remoteOp'$ given $metadata$
+    \label{itm:regenerate-remote-op}
     \item Add entry $(remoteOp', localOp)$ to $L"$
     \item Propagate $remoteOp'$
   \end{enumerate}
@@ -413,10 +416,10 @@ This algorithm is represented by figure~\ref{renameRemote}
 
 \begin{itemize}
   \item Differents nodes, while performing the remote renaming operation,
-    may replay at step 6.a the same operation
+    may replay at step \ref{itm:replay-local-op} the same operation
   \item Since there is no coordination between them, in the case of a $addLocal$,
     they will end up generating two different remote operations
-    $remoteOp'$ and $remoteOp"$ during step 6.b
+    $remoteOp'$ and $remoteOp"$ during step \ref{itm:regenerate-remote-op}
   \item We will have to deliver them both to each node to actually converge
     (the states would differ otherwise)
   \item This will result in the duplication of the user's intention
@@ -485,9 +488,9 @@ This algorithm is represented by figure~\ref{renameRemote}
 \subsection{Idea}
 
 \begin{itemize}
-  \item At step 6.a, if we can generate deterministically the resulting $id$
+  \item At step \ref{itm:replay-local-op}, if we can generate deterministically the resulting $id$
     for a given previous log entry $(addRemote, addLocal)$, then we would not duplicate the user's intention
-  \item Indeed, each node would thus generates the same operation $addRemote'$ at step 6.b
+  \item Indeed, each node would thus generates the same operation $addRemote'$ at step \ref{itm:regenerate-remote-op}
   \item In that case, we would only need to deliver at least once $addRemote'$ to the nodes to converge
     (or exactly-once if the $addRemote$ is not idempotent)
 \end{itemize}
@@ -501,7 +504,7 @@ Can we define the following operation $addRedo(S, (addRemote, addLocal)) = (S', 
     where $(S, id) = addLocal(S", index, elt)$
     and $(S', \_) = addRedo(S", (addRemote(S", id, elt), addLocal(S", index, elt))$
 \end{itemize}
-This operation would be used at step 6.a instead of simply using $addLocal$
+This operation would be used at step \ref{itm:replay-local-op} instead of simply using $addLocal$
 and would solve the duplication effect.
 
 \section{Discussion}
