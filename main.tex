@@ -7,6 +7,8 @@
 \usepackage[a4paper, total={6in, 8in}]{geometry} % Set margins
 
 \usepackage{acronym} % \ac[p], \acl[p], \acs[p], \acf[p]
+\usepackage{algorithm} % \begin{algorithm} \end{algorithm}
+\usepackage{algpseudocode} % \begin{algorithmic} \end{algorithmic}
 \usepackage{amsthm} % \newtheorem
 \newtheorem{mydef}{Definition}
 
@@ -131,6 +133,8 @@ Has a state $S$ which represents the replicated sequence (use additional metadat
 
 \subsubsection{Identifiers}
 
+\paragraph{Description} ~\\
+
 Associates an identifier $id$ to each element $elt$ of the sequence
 \begin{itemize}
   \item Unique (an identifier can not be generated twice)
@@ -147,6 +151,108 @@ Associates an identifier $id$ to each element $elt$ of the sequence
 The elements in the sequence are always ordered according to their identifiers :
 in a sequence $[(id_1, elt_1), ..., (id_3, elt_3), ..., (id_2, elt_2)]$
 we always have $id_1 < ... < id_3 < ... < id_2$.
+
+\paragraph{Details} ~\\
+
+An identifier is actually composed of a list of tuples. Each tuple is of the following form:
+\begin{center}
+$<pos, id_{site}, clock_{site}>$
+\end{center}
+where
+\begin{itemize}
+  \item $pos: Int$, allows to determine the position of this identifier compare to other ones.
+  \item $id_{site}: Int$, refers to the site's identifier, assumed to be unique.
+  \item $clock_{site}: Int$, refers to the site's logical clock, which increases monotically with local operations.
+\end{itemize}
+
+\paragraph{Generation} ~\\
+
+To generate a new identifier $id_3$ between two others
+$id_1 = [tuple_{1,1}, tuple_{1,2},...,tuple_{1,n}]$ and
+$id_2 = [tuple_{2,1}, tuple_{2,2},...,tuple_{2,n}]$,
+we use the algorithm \ref{alg:generate-id}:
+
+
+\begin{algorithm}
+  \caption{Identifier generation algorithm (simplified)}\label{alg:generate-id}
+  \begin{algorithmic}
+    \Function{generateIdentifier}{$id_1: Id, id_2: Id, id_{site}: Int, clock_{site}: Int$}{$:Id$}
+      \Require $id_1 < id_2$
+      \Ensure $id_1 < id_3 < id_2$
+      \Statex
+      \State $id_3 \gets [~]$
+      \State $continue \gets true$
+      \State $i \gets 0$
+      \While{$continue$}
+        \State $tuple_1 \gets id_1[i]$
+        \State $tuple_2 \gets id_2[i]$
+        \If{$tuple_2.pos - tuple_1.pos > 2$}
+          \State $newPos \gets randomBetween(tuple_1.pos, tuple_2.pos)$
+          \State $id_3 \gets id_3 :: <newPos, id_{site}, clock_{site}>$
+          \State $continue \gets false$
+        \Else
+          \State $id_3 \gets id_3 :: tuple_1$
+        \EndIf
+        \State $i \gets i+1$
+      \EndWhile
+      \State \Return $id_3$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+
+We compare the identifiers' tuples in a pairwise manner.
+As soon as we are able to generate a new tuple $tuple_3$ such as $tuple_1 < tuple_3 < tuple_2$,
+we add it to $id_3$ before returning the later.
+\\
+If we can not generate such a tuple,
+we add instead $tuple_1$ to $id_3$ and move to the next pair.
+\\
+\textbf{Note:} If the identifiers $id_1$ and $id_2$ have different sizes,
+we use some default tuples to "fill" the shorter of the two:
+\begin{itemize}
+  \item $minTuple$ if it is $id_1$
+  \item $maxTuple$ otherwise
+\end{itemize}
+
+\paragraph{Comparison} ~\\
+
+To compare two identifiers, we use the algorithm \ref{alg:compare-ids}:
+
+\begin{algorithm}
+  \caption{Identifier comparison algorithm}\label{alg:compare-ids}
+  \begin{algorithmic}
+    \Function{compareIdentifiers}{$id_1: Id, id_2: Id$}{$: LESS~|~EQUALS~|~GREATER$}
+      \For{$i \gets 0, min(id_1.length, id_2.length)$}
+        \State $tuple_1 \gets id_1[i]$
+        \State $tuple_2 \gets id_2[i]$
+        \If{$tuple_1.pos < tuple_2.pos$}
+          \State \Return $LESS$
+        \ElsIf{$tuple_1.pos > tuple_2.pos$}
+          \State \Return $GREATER$
+        \ElsIf{$tuple_1.id_{site} < tuple_2.id_{site}$}
+          \State \Return $LESS$
+        \ElsIf{$tuple_1.id_{site} > tuple_2.id_{site}$}
+          \State \Return $GREATER$
+        \ElsIf{$tuple_1.clock_{site} < tuple_2.clock_{site}$}
+          \State \Return $LESS$
+        \ElsIf{$tuple_1.clock_{site} > tuple_2.clock_{site}$}
+          \State \Return $GREATER$
+        \EndIf
+      \EndFor
+      \If{$id_1.length < id_2.length$}
+        \State \Return $LESS$
+      \ElsIf{$id_1.length > id_2.length$}
+        \State \Return $GREATER$
+      \EndIf
+      \State \Return $EQUALS$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+When comparing two identifiers, we compare theirs tuples in a pairwise manner.
+As soon as we find one element which is less than its pair,
+we can determine the order between the two identifiers.
 
 \subsubsection{Operations}
 
