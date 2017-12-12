@@ -443,6 +443,8 @@ Such an algorithm is described in \ref{alg:local-rename}:
 
 \subsection{$renameRemote$}
 
+\paragraph{Definition}~\\
+
 \begin{itemize}
   \item Add an operation $renameRemote(S, L, mapIds, cc_{S'}) = (S", L")$
   \begin{itemize}
@@ -454,6 +456,52 @@ Such an algorithm is described in \ref{alg:local-rename}:
   \end{itemize}
 \end{itemize}
 
+\paragraph{Algorithm}~\\
+
+Given an operation $renameRemote(S, L, mapIds, cc_{S'})$,
+resulting from the execution of $renameLocal(S')$ on another node,
+we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
+
+\begin{algorithm}
+  \caption{Remote renaming algorithm}
+  \label{alg:remote-rename}
+  \begin{algorithmic}
+    \Procedure{renameRemote}{$S: State, L: Log, mapIds: Map<Id, Id>, cc_{S'}: StateVector$}
+      \ForAll{$remoteOp \in concurrentOps(cc_{S'}, L)$}
+      \Comment Get concurrent operations to the renaming
+        \State $id \gets remoteOp.id$
+        \If{$id \notin mapIds$}
+          \State $prevId \gets prev(id, mapIds)$
+          \Comment Get the predecessor of $id$ in $mapIds$
+          \State $prevId' \gets mapIds.get(prevId)$
+          \State $id' \gets prevId'.concat(id)$
+          \State $mapIds.set(id, id')$
+          \State $remoteOp' \gets generateRemoteOp(remoteOp, id')$
+          \State $broadcast(remoteOp')$
+        \EndIf
+      \EndFor
+      \ForAll{$(id, elt) \in S$}
+        \State $id \gets mapIds.get(id)$
+      \EndFor
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+\paragraph{Limits}~\\
+
+\begin{itemize}
+  \item Need a causal delivery of the $rename$ operation
+  \item Do not handle concurrent $rename$ operations
+  \begin{itemize}
+    \item For now, can assume that only one node can perform such operations
+  \end{itemize}
+  \item $renameRemote$ operation can be bandwith-consuming (need to send old and new identifiers)
+  \begin{itemize}
+    \item Can reduce its size but will require more computations
+    \item Using the causal context of the operation, we can regenerate original state (replay the log)
+    \item Since $renameLocal$ is deterministic, can re-compute $mapIds$ locally
+  \end{itemize}
+\end{itemize}
 
 \bibliography{ref-selected}
 
