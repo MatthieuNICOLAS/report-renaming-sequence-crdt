@@ -451,7 +451,7 @@ Such an algorithm is described in \ref{alg:local-rename}:
     \item Replace current state $S$ by equivalent state $S"$ and current log $L$ by equivalent log $L"$
     \item Rename all identifiers $id \in S \cdot id \in S'$ using $mapIds$
     \item Also have to rename all identifiers $id \in S \cdot id \notin S'$ to preserve the current order of elements
-    \item \textbf{Precondition: } $S \geq S'$ ($S$ has seen all the operations seen by $S'$ but may have seen more)
+    \item \textbf{Precondition: } $cc_S' \subset cc_S$ ($S$ has seen all the operations seen by $S'$ but may have seen more)
     \item $view(S) = view(S")$ where $(S", \_) = renameRemote(S, L, mapIds, cc_{S'})$
   \end{itemize}
 \end{itemize}
@@ -531,9 +531,9 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
     of the data structure, the number of elements of the map
     and the number of concurrent operations
   \item Should be able to adapt the algorithms \ref{alg:local-rename} and \ref{alg:remote-rename}
-    to Identifier-based Sequence \acp{CRDT} with variable granularity
+    to blockwise Identifier-based Sequence \acp{CRDT}
   \begin{itemize}
-    \item Here, the granularity of element is 1 ($add$ and $delete$ one by one)
+    \item Here, each element is manipulated one by one (with $add$ and $delete$, but also during search)
     \item In some algorithms like \emph{LogootSplit},
       we actually group elements using blocks
     \item It allows us to:
