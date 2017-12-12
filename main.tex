@@ -503,6 +503,36 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
   \end{itemize}
 \end{itemize}
 
+\section{Discussion}
+
+\begin{itemize}
+  \item Can use a mechanism of $epoch$
+  \begin{itemize}
+    \item Each $rename$ increase the $epoch$ counter
+    \item Each operation is labelled with its $epoch$ of generation
+    \item Allow us to reject obsoletes operations
+  \end{itemize}
+  \item Performances of these operations depend on the number of elements
+    of the data structure, the number of elements of the map
+    and the number of concurrent operations
+  \item Should be able to adapt the algorithms \ref{alg:local-rename} and \ref{alg:remote-rename}
+    to Identifier-based Sequence \acp{CRDT} with variable granularity
+  \begin{itemize}
+    \item Here, the granularity of element is 1 ($add$ and $delete$ one by one)
+    \item In some algorithms like \emph{LogootSplit},
+      we actually group elements using blocks
+    \item It allows us to:
+    \begin{itemize}
+      \item Factorize the identifiers of contiguous elements
+      \item Reduce the size of the collection by storing
+        the blocks instead of the elements directly (thus speed up search)
+    \end{itemize}
+    \item We could adapt the algorithms for these data structures
+    \item The $renaming$ operations would thus help us
+      to reduce the number of blocks too (could regroup all elements in one new block)
+  \end{itemize}
+\end{itemize}
+
 \bibliography{ref-selected}
 
 \end{document}
