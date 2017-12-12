@@ -402,6 +402,45 @@ An example of the lifecycle of such a replicated data structure is shown in figu
   \end{itemize}
 \end{itemize}
 
+\paragraph{Algorithm}~\\
+
+The renaming algorithm can be seen here as an algorithm
+to distribute evenly a number of values $n$ over an interval $range$.
+Such an algorithm is described in \ref{alg:local-rename}:
+
+\begin{algorithm}
+  \caption{Local renaming algorithm}
+  \label{alg:local-rename}
+  \begin{algorithmic}
+    \Function{renameLocal}{$S: State$}{$: Map<Id, Id>$}
+      \State $mapIds \gets Map()$
+      \State $min \gets MIN$
+      \Comment The minimum value of the range used
+      \State $max \gets MAX$
+      \Comment The maximum value of the range used
+      \State $range \gets max + min$
+      \State $n \gets S.length$
+      \State $step \gets range / (n + 1)$
+      \ForAll{$(id, elt, index) \in S$}
+        \State $newPos \gets (index + 1) * step + min$
+        \State $id' \gets [<newPos, id.id_{site}, id.clock_{site}>]$
+        \State $mapIds.set(id, id')$
+        \State $id \gets id'$
+      \EndFor
+      \State \Return $mapIds$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+\paragraph{Limits}~\\
+
+\begin{itemize}
+  \item Work only if $n < range$
+  \begin{itemize}
+    \item Can assume it is generally the case
+  \end{itemize}
+\end{itemize}
+
 \subsection{$renameRemote$}
 
 \begin{itemize}
