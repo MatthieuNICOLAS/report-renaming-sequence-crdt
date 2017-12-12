@@ -563,6 +563,18 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
       \item Need to retrieve it or to compute it again
     \end{itemize}
   \end{itemize}
+  \item When to trigger the $renaming$?
+  \begin{itemize}
+    \item According to the size of the longer identifier?
+    \item According to the number of elements (in blockwise \acp{CRDT})?
+    \begin{itemize}
+      \item What would be the thresholds in these case?
+    \end{itemize}
+    \item According to the state of the collaboration?
+    \begin{itemize}
+      \item If the system is idle for example
+    \end{itemize}
+  \end{itemize}
   \item Which version(s) of the operations to store in the log?
   \begin{itemize}
     \item The original one?
