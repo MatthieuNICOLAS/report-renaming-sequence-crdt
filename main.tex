@@ -402,32 +402,6 @@ An example of the lifecycle of such a replicated data structure is shown in figu
   \end{itemize}
 \end{itemize}
 
-\begin{figure}[h]
-  \begin{tikzpicture}[
-    localOp/.style={->, thick, shorten <=3pt, shorten >=3pt},
-    remoteOp/.style={->, dotted, thick, shorten <=3pt, shorten >=3pt},
-    trait/.style={fill, rectangle, xscale=0.1},
-    medium/.style={scale=0.85}]
-
-    \newcommand{\sTwo}{$[(id_1, elt_1), (id_2, elt_2)]$}
-    \newcommand{\sFour}{$[(id'_1, elt_1), (id'_2, elt_2)]$}
-
-    \node (A) at (0, 0) {node A};
-    \node[right=5pt of A] (beginA) {};
-    \node[trait, right=of beginA] (S2A) {};
-    \drawState{S2A}{above}{$S_2$}{\sTwo}{$L_2$}{1/1, 2/2}
-    \node[trait, right=10 of A] (S4A) {};
-    \drawState{S4A}{above}{$S_4$}{\sFour}{$L_4$}{1/1, 2/2, 4/4}
-    \node[right=13 of A] (endA) {};
-
-    \draw[->] (beginA) -- (endA);
-    \draw[localOp] (S2A) to[out=-15, in=195] node[below, medium] {$localOp_4=renameLocal(id_1 \rightarrow id'_1, id_2 \rightarrow id'_2)$} (S4A);
-
-  \end{tikzpicture}
-  \caption{Local renaming of identifiers of the replicated sequence}
-  \label{renameLocal}
-\end{figure}
-
 \subsection{$renameRemote$}
 
 \begin{itemize}
