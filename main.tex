@@ -491,6 +491,13 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
 
 \begin{itemize}
   \item Need a causal delivery of the $rename$ operation
+  \begin{itemize}
+    \item Actually not necessary
+    \item But would have to be able to transform operations from its causal context using $mapIds$
+    \item Thus require to keep a reference to $mapIds$
+    \item Would be possible to receive an operation which is outdated of several $renaming$
+    \item Would have to go through all its transformations
+  \end{itemize}
   \item Do not handle concurrent $rename$ operations
   \begin{itemize}
     \item For now, can assume that only one node can perform such operations
