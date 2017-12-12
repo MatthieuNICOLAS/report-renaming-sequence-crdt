@@ -85,13 +85,12 @@
     \xappto{\logcontents}{
       \noexpand
       \nodepart{\numToText{\counter}}
-      $remoteOp_\remote$ $localOp_\local$
+      $remoteOp_\remote$
     }
   }
   % Draw log
   \node[#2=45pt of #1,
     scale=0.75,
-    text width=2cm,
     align=center,
     draw,
     rectangle split,
@@ -165,6 +164,8 @@ where
   \item $clock_{site}: Int$, refers to the site's logical clock, which increases monotically with local operations.
 \end{itemize}
 
+We note the $id_{site}$ and the $clock_{site}$ of the last tuple of $id$
+as $id.id_{site}$ and $id.clock_{site}$ respectively.
 \paragraph{Generation} ~\\
 
 To generate a new identifier $id_3$ between two others
@@ -203,7 +204,7 @@ we use the algorithm \ref{alg:generate-id}:
 
 We compare the identifiers' tuples in a pairwise manner.
 As soon as we are able to generate a new tuple $tuple_3$ such as $tuple_1 < tuple_3 < tuple_2$,
-we add it to $id_3$ before returning the later.
+we add it to $id_3$ and return the later.
 \\
 If we can not generate such a tuple,
 we add instead $tuple_1$ to $id_3$ and move to the next pair.
@@ -251,7 +252,7 @@ To compare two identifiers, we use the algorithm \ref{alg:compare-ids}:
 \end{algorithm}
 
 When comparing two identifiers, we compare theirs tuples in a pairwise manner.
-As soon as we find one element which is less than its pair,
+As soon as we find one element which is different from its pair,
 we can determine the order between the two identifiers.
 
 \subsubsection{Operations}
@@ -262,10 +263,11 @@ For each operation to update the data structure, has two forms of it: the $local
   \item Performing a $local$ operation on a given state $S$
     returns the new state $S'$ and the metadata needed to build an equivalent $remote$ operation
   \item The $remote$ operation is propagated to other nodes so they can also update their own state
-  \item Given a state $S$ and an operation $local(S, data) = (S', metadata)$, we have $remote(S, metadata) = S'$
+  \item Given a state $S$ and an operation $localOp(S, data) = (S', metadata)$, we have $remoteOp(S, metadata) = S'$
   \item \textbf{Note: } given an $local$ operation $localOp$, there may be several equivalent $remote$ operations $remoteOp$, $remoteOp'$, $remoteOp"$...
 \end{itemize}
 
+We note the identifier of the element targeted by a $remote$ operation as $remoteOp.id$.
 \subsubsection{$add$}
 
 The operation $add$ allows to insert an element into the sequence :
@@ -316,13 +318,13 @@ The operation $del$ allows to remove an element from the sequence :
 
 Associates to a state $S$ a log $L$
 \begin{itemize}
-  \item Is a sequence of entries $(remoteOp, localOp)$, a remote operation and its local counterpart
+  \item Is a sequence of the $remote$ operations observed
   \item The sequence of remote operations,
     performed in order from a blank state $S_{blank}$,
     allows to recreate state $S$
-  \item Each entry represented as
+  \item Each entry is represented as
     \begin{tikzpicture}
-      \node[draw, rectangle, align=center, scale=0.75] {$remoteOp$ \\$localOp$};
+      \node[draw, rectangle, align=center] {$remoteOp$};
     \end{tikzpicture} in the following figures
 \end{itemize}
 
@@ -387,6 +389,8 @@ An example of the lifecycle of such a replicated data structure is shown in figu
 
 \subsection{$renameLocal$}
 
+\paragraph{Definition}~\\
+
 \begin{itemize}
   \item Add an operation $renameLocal(S) = (S', mapIds, cc_S)$
   \begin{itemize}
@@ -395,7 +399,6 @@ An example of the lifecycle of such a replicated data structure is shown in figu
     \item Also need to return the causal context $cc_S$ of the state $S$
       to indicate on which state has been performed the renaming operation
     \item $view(S) = view(S')$ where $(S', \_, \_) = renameLocal(S)$
-    \item Represented by figure~\ref{renameLocal}
   \end{itemize}
 \end{itemize}
 
