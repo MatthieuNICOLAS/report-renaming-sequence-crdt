@@ -533,6 +533,30 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
   \end{itemize}
 \end{itemize}
 
+\section{Questions}
+
+\begin{itemize}
+  \item How to deal with concurrent operations to $renaming$ one when you already applied the $renaming$?
+  \begin{itemize}
+    \item Can reject it and wait to receive its modified version
+    \begin{itemize}
+      \item The node which sent us the original version should be able to send us its modified one
+      \item But induces some delay
+    \end{itemize}
+    \item Can use $mapIds$ to compute its transformation
+    \begin{itemize}
+      \item Need to retrieve it or to compute it again
+    \end{itemize}
+  \end{itemize}
+  \item Which version(s) of the operations to store in the log?
+  \begin{itemize}
+    \item The original one?
+    \item The modified one?
+    \item A mix ?
+    \item Actually depends on the answer to the previous question
+  \end{itemize}
+\end{itemize}
+
 \bibliography{ref-selected}
 
 \end{document}
