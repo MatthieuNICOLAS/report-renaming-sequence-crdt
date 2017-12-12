@@ -418,7 +418,7 @@ Such an algorithm is described in \ref{alg:local-rename}:
       \Comment The minimum value of the range used
       \State $max \gets MAX$
       \Comment The maximum value of the range used
-      \State $range \gets max + min$
+      \State $range \gets max - min$
       \State $n \gets S.length$
       \State $step \gets range / (n + 1)$
       \ForAll{$(id, elt, index) \in S$}
