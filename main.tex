@@ -519,7 +519,15 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
     \item Each operation is labelled with its $epoch$ of generation
     \item Allow us to reject obsoletes operations
   \end{itemize}
-  \item Performances of these operations depend on the number of elements
+  \item Do not require to add other causality information on all operations, only on the $renaming$ one
+  \begin{itemize}
+    \item The $epoch$ mechanism and the $renaming$'s causal context is sufficient
+      to determine the concurrency of operations to the $renaming$ operation
+    \item If the $epoch$ is the same as the one before the $renaming$
+      and if this operation does not belong to the $renaming$'s causal context,
+      this operation is a concurrent one
+  \end{itemize}
+  \item Performances of the $renaming$ operations depend on the number of elements
     of the data structure, the number of elements of the map
     and the number of concurrent operations
   \item Should be able to adapt the algorithms \ref{alg:local-rename} and \ref{alg:remote-rename}
