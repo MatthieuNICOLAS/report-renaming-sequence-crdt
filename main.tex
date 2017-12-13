@@ -514,6 +514,10 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
 \section{Discussion}
 
 \begin{itemize}
+  \item The size of identifiers from concurrent operations to the $renaming$ operation will increase
+  \begin{itemize}
+    \item Can argue that they will shrink at next renaming
+  \end{itemize}
   \item Can use a mechanism of $epoch$
   \begin{itemize}
     \item Each $rename$ increase the $epoch$ counter
