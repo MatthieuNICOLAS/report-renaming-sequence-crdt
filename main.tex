@@ -467,22 +467,23 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
   \label{alg:remote-rename}
   \begin{algorithmic}
     \Procedure{renameRemote}{$S: State, L: Log, mapIds: Map<Id, Id>, cc_{S'}: StateVector$}
+      \State $mapIds' \gets mapIds$
       \ForAll{$remoteOp \in concurrentOps(cc_{S'}, L)$}
       \Comment Get concurrent operations to the renaming
         \State $id \gets remoteOp.id$
-        \If{$id \notin mapIds$}
+        \If{$id \notin mapIds'$}
           \State $prevId \gets prev(id, mapIds)$
           \Comment Get the predecessor of $id$ in $mapIds$
           \State $prevId' \gets mapIds.get(prevId)$
           \State $id' \gets prevId' :: id$
           \Comment Generate the new identifier by concatening $prevId'$ and $id$
-          \State $mapIds.set(id, id')$
+          \State $mapIds'.set(id, id')$
           \State $remoteOp' \gets generateRemoteOp(remoteOp, id')$
           \State $broadcast(remoteOp')$
         \EndIf
       \EndFor
       \ForAll{$(id, elt) \in S$}
-        \State $id \gets mapIds.get(id)$
+        \State $id \gets mapIds'.get(id)$
       \EndFor
     \EndProcedure
   \end{algorithmic}
