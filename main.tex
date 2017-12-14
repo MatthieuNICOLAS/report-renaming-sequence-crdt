@@ -587,6 +587,13 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
       \item Need to retrieve it or to compute it again
     \end{itemize}
   \end{itemize}
+  \item Which version(s) of the operations to store in the log?
+  \begin{itemize}
+    \item The original one?
+    \item The modified one?
+    \item A mix ?
+    \item Actually depends on the answer to the previous question
+  \end{itemize}
   \item When to trigger the $renaming$?
   \begin{itemize}
     \item According to the size of the longer identifier?
@@ -598,13 +605,6 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
     \begin{itemize}
       \item If the system is idle for example
     \end{itemize}
-  \end{itemize}
-  \item Which version(s) of the operations to store in the log?
-  \begin{itemize}
-    \item The original one?
-    \item The modified one?
-    \item A mix ?
-    \item Actually depends on the answer to the previous question
   \end{itemize}
 \end{itemize}
 
