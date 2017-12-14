@@ -409,7 +409,29 @@ An example of the lifecycle of such a replicated data structure is shown in figu
 
 The renaming algorithm can be seen here as an algorithm
 to distribute evenly a number of values $n$ over an interval $range$.
-Such an algorithm is described in \ref{alg:local-rename}:
+Such an algorithm is described in \ref{alg:id-rename}:
+
+\begin{algorithm}
+  \caption{Identifier renaming algorithm}
+  \label{alg:id-rename}
+  \begin{algorithmic}
+    \Function{renameIdentifier}{$id: Id, index: Int, n: Int$}{$: Id$}
+      \State $min \gets MIN$
+      \Comment The minimum value of the range used
+      \State $max \gets MAX$
+      \Comment The maximum value of the range used
+      \State $range \gets max - min$
+      \State $step \gets range / (n + 1)$
+      \State $newPos \gets (index + 1) * step + min$
+      \State $id' \gets [<newPos, id.id_{site}, id.clock_{site}>]$
+      \State \Return $id'$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+This algorithm can then be used to rename each identifier
+for a given state $S$ and generate a mapping between the previous identifiers
+and the new ones as shown in \ref{alg:local-rename}:
 
 \begin{algorithm}
   \caption{Local renaming algorithm}
@@ -417,16 +439,9 @@ Such an algorithm is described in \ref{alg:local-rename}:
   \begin{algorithmic}
     \Function{renameLocal}{$S: State$}{$: Map<Id, Id>$}
       \State $mapIds \gets Map()$
-      \State $min \gets MIN$
-      \Comment The minimum value of the range used
-      \State $max \gets MAX$
-      \Comment The maximum value of the range used
-      \State $range \gets max - min$
       \State $n \gets S.length$
-      \State $step \gets range / (n + 1)$
       \ForAll{$(id, elt, index) \in S$}
-        \State $newPos \gets (index + 1) * step + min$
-        \State $id' \gets [<newPos, id.id_{site}, id.clock_{site}>]$
+        \State $id' \gets renameIdentifier(id, index, n)$
         \State $mapIds.set(id, id')$
         \State $id \gets id'$
       \EndFor
