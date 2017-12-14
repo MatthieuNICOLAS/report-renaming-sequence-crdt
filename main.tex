@@ -263,8 +263,11 @@ For each operation to update the data structure, has two forms of it: the $local
   \item Performing a $local$ operation on a given state $S$
     returns the new state $S'$ and the metadata needed to build an equivalent $remote$ operation
   \item The $remote$ operation is propagated to other nodes so they can also update their own state
-  \item Given a state $S$ and an operation $localOp(S, data) = (S', metadata)$, we have $remoteOp(S, metadata) = S'$
-  \item \textbf{Note: } given an $local$ operation $localOp$, there may be several equivalent $remote$ operations $remoteOp$, $remoteOp'$, $remoteOp"$...
+  \item Given a state $S$ and an operation $localOp(S, data) = (S', metadata)$,
+    we have $remoteOp(S, metadata) = S'$
+  \item \textbf{Note: } given an $local$ operation $localOp$,
+    there may be several equivalent $remote$ operations $remoteOp$, $remoteOp'$, $remoteOp"$...,
+    but only one is picked.
 \end{itemize}
 
 We note the identifier of the element targeted by an $remote$ operation as $remoteOp.id$.
@@ -449,7 +452,7 @@ Such an algorithm is described in \ref{alg:local-rename}:
   \item Add an operation $renameRemote(S, L, mapIds, cc_{S'}) = (S", L")$
   \begin{itemize}
     \item Replace current state $S$ by equivalent state $S"$ and current log $L$ by equivalent log $L"$
-    \item Rename all identifiers $id \in S \cdot id \in S'$ using $mapIds$
+    \item Rename all identifiers $id \in S \cap S'$ using $mapIds$
     \item Also have to rename all identifiers $id \in S \cdot id \notin S'$ to preserve the current order of elements
     \item \textbf{Precondition: } $cc_S' \subset cc_S$ ($S$ has seen all the operations seen by $S'$ but may have seen more)
     \item $view(S) = view(S")$ where $(S", \_) = renameRemote(S, L, mapIds, cc_{S'})$
