@@ -136,7 +136,7 @@ Has a state $S$ which represents the replicated sequence (use additional metadat
 
 Associates an identifier $id$ to each element $elt$ of the sequence
 \begin{itemize}
-  \item Unique (an identifier can not be generated twice)
+  \item Unique (an identifier cannot be generated twice)
   \item Order relation (so that we can compare two identifiers)
   \begin{itemize}
     \item Allows to determine the order of elements of the sequence using their identifiers
@@ -159,9 +159,9 @@ $<pos, id_{site}, clock_{site}>$
 \end{center}
 where
 \begin{itemize}
-  \item $pos: Int$, allows to determine the position of this identifier compare to other ones.
+  \item $pos: Int$, allows to determine the position of this identifier compared to other ones.
   \item $id_{site}: Int$, refers to the site's identifier, assumed to be unique.
-  \item $clock_{site}: Int$, refers to the site's logical clock, which increases monotically with local operations.
+  \item $clock_{site}: Int$, refers to the site's logical clock, which increases monotonically with local operations.
 \end{itemize}
 
 We note the $id_{site}$ and the $clock_{site}$ of the last tuple of $id$
@@ -206,7 +206,7 @@ We compare the identifiers' tuples in a pairwise manner.
 As soon as we are able to generate a new tuple $tuple_3$ such as $tuple_1 < tuple_3 < tuple_2$,
 we add it to $id_3$ and return the later.
 \\
-If we can not generate such a tuple,
+If we cannot generate such a tuple,
 we add instead $tuple_1$ to $id_3$ and move to the next pair.
 \\
 \textbf{Note:} If the identifiers $id_1$ and $id_2$ have different sizes,
@@ -251,7 +251,7 @@ To compare two identifiers, we use the algorithm \ref{alg:compare-ids}:
   \end{algorithmic}
 \end{algorithm}
 
-When comparing two identifiers, we compare theirs tuples in a pairwise manner.
+When comparing two identifiers, we compare their tuples in a pairwise manner.
 As soon as we find one element which is different from its pair,
 we can determine the order between the two identifiers.
 
@@ -259,7 +259,7 @@ we can determine the order between the two identifiers.
 
 For each operation to update the data structure, has two forms of it: the $local$ form and the $remote$ one
 \begin{itemize}
-  \item The $local$ operation is triggered by the node (by user request for example)
+  \item The $local$ operation is triggered by the node (by users' requests for example)
   \item Performing a $local$ operation on a given state $S$
     returns the new state $S'$ and the metadata needed to build an equivalent $remote$ operation
   \item The $remote$ operation is propagated to other nodes so they can also update their own state
@@ -267,7 +267,7 @@ For each operation to update the data structure, has two forms of it: the $local
   \item \textbf{Note: } given an $local$ operation $localOp$, there may be several equivalent $remote$ operations $remoteOp$, $remoteOp'$, $remoteOp"$...
 \end{itemize}
 
-We note the identifier of the element targeted by a $remote$ operation as $remoteOp.id$.
+We note the identifier of the element targeted by an $remote$ operation as $remoteOp.id$.
 \subsubsection{$add$}
 
 The operation $add$ allows to insert an element into the sequence :
@@ -476,7 +476,7 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
           \Comment Get the predecessor of $id$ in $mapIds$
           \State $prevId' \gets mapIds.get(prevId)$
           \State $id' \gets prevId' :: id$
-          \Comment Generate the new identifier by concatening $prevId'$ and $id$
+          \Comment Generate the new identifier by concatenating $prevId'$ and $id$
           \State $mapIds'.set(id, id')$
           \State $remoteOp' \gets generateRemoteOp(remoteOp, id')$
           \State $broadcast(remoteOp')$
@@ -504,7 +504,7 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
   \begin{itemize}
     \item For now, can assume that only one node can perform such operations
   \end{itemize}
-  \item $renameRemote$ operation can be bandwith-consuming (need to send old and new identifiers)
+  \item $renameRemote$ operation can be bandwidth-consuming (need to send old and new identifiers)
   \begin{itemize}
     \item Can reduce its size but will require more computations
     \item Using the causal context of the operation, we can regenerate original state (replay the log)
@@ -527,7 +527,7 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
   \end{itemize}
   \item Do not require to add other causality information on all operations, only on the $renaming$ one
   \begin{itemize}
-    \item The $epoch$ mechanism and the $renaming$'s causal context is sufficient
+    \item The $epoch$ mechanism and the $renaming$'s causal context are sufficient
       to determine the concurrency of operations to the $renaming$ operation
     \item If the $epoch$ is the same as the one before the $renaming$
       and if this operation does not belong to the $renaming$'s causal context,
@@ -544,7 +544,7 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
       we actually group elements using blocks
     \item It allows us to:
     \begin{itemize}
-      \item Factorize the identifiers of contiguous elements
+      \item Factorise the identifiers of contiguous elements
       \item Reduce the size of the collection by storing
         the blocks instead of elements directly (thus speed up search)
     \end{itemize}
@@ -574,7 +574,7 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
     \item According to the size of the longer identifier?
     \item According to the number of elements (in blockwise \acp{CRDT})?
     \begin{itemize}
-      \item What would be the thresholds in these case?
+      \item What would be the thresholds in these cases?
     \end{itemize}
     \item According to the state of the collaboration?
     \begin{itemize}
