@@ -530,6 +530,88 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
   \end{itemize}
 \end{itemize}
 
+\section{Optimisation}
+
+\subsection{Motivation}
+
+As stated previously, the presented mechanism's main flaw is the need to broadcast
+$mapIds$, a mapping between the old identifiers to the new ones.
+According to the size of the old identifiers, this map may be bandwidth-consuming.
+
+\subsection{Idea}
+
+The algorithm \ref{alg:id-rename} is deterministic. Hence, as long as we provide
+to other nodes the required data (identifiers which are renamed,
+their index in the data structure, and the number of elements in the data structure),
+they will be able to compute the new identifiers.
+
+All these data are actually contained in a sequence composed of the identifiers
+which are renamed. We can thus, instead of sending $mapIds$, send such a sequence.
+
+\paragraph{Example}~\\
+
+Instead of broadcasting $(id_1 \rightarrow id_1', id_2 \rightarrow id_2', id_3 \rightarrow id_3')$,
+we only need to broadcast to other nodes $[id_1, id_2, id_3]$.\\
+
+We were able to reduce the size of the data to broadcast, but can reduce it further.
+Indeed, each identifier is unique. But to refer to one identifier, we do not
+need all of its components : we only need two of them, $id.id_{site}$ and $id.clock_{site}$.
+Therefore, we are able to reduce again the data to broadcast to a fixed size per element
+by discarding every component of the identifier except $id.id_{site}$ and $id.clock_{site}$.
+
+\paragraph{Example}~\\
+
+Instead of broadcasting $[id_1, id_2, id_3]$,
+we only need to broadcast to other nodes
+$[(id_1.id_{site}, id_1.clock_{site}),
+(id_2.id_{site}, id_2.clock_{site}),
+(id_3.id_{site}, id_3.clock_{site})]$.
+
+\subsection{Algorithm}
+
+Given such a sequence, we can then recompute $mapIds$
+using the following algorithm \ref{alg:recompute-map}:
+
+\begin{algorithm}
+  \caption{Map recomputation algorithm}
+  \label{alg:recompute-map}
+  \begin{algorithmic}
+    \Function{recomputeMapIds}{$S: State, seq: <Int, Int>[]$}{$: Map<Id, Id>$}
+      \State $mapIds \gets Map()$
+      \State $n \gets seq.length$
+      \ForAll {$(id_{site}, clock_{site}, index) \in seq$}
+        \ForAll {$(id, elt) \in S$}
+          \If{$id.id_{site} = id_{site}$ AND $id.clock_{site} = clock_{site}$}
+            \State $id' \gets renameIdentifier(id, index, n)$
+            \State $mapIds.set(id, id')$
+          \EndIf
+        \EndFor
+      \EndFor
+      \State \Return $mapIds$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+After recomputing $mapIds$, we can resume the $renaming$ using algorithm \ref{alg:remote-rename}.
+
+\paragraph{Notes:}~\\
+
+\begin{itemize}
+  \item Able with this solution to get a fixed size per element in the data broadcasted
+    (instead of broadcasting unbounded identifiers).
+  \item Is not an issue if we are not able to find an element of the sequence
+    in the current state
+  \begin{itemize}
+    \item Happens if the element has been deleted concurrently
+    \item Thus we won't need to rename it
+  \end{itemize}
+  \item Cannot factorise this algorithm with the generation of new identifiers
+    for concurrent operations
+  \begin{itemize}
+    \item We need the full $mapIds$ to generate them
+  \end{itemize}
+\end{itemize}
+
 \section{Discussion}
 
 \begin{itemize}
