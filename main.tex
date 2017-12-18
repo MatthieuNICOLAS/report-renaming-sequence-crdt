@@ -576,16 +576,19 @@ using the following algorithm \ref{alg:recompute-map}:
   \caption{Map recomputation algorithm}
   \label{alg:recompute-map}
   \begin{algorithmic}
-    \Function{recomputeMapIds}{$S: State, seq: <Int, Int>[]$}{$: Map<Id, Id>$}
+    \Function{recomputeMapIds}{$S: State, L: Log, seq: <Int, Int>[], cc_{S'}: StateVector$}{$: Map<Id, Id>$}
       \State $mapIds \gets Map()$
       \State $n \gets seq.length$
+      \State $ids \gets S.map((id, elt) \to id)$
+      \Comment Retrieve all identifiers from current state
+      \State $ids \gets ids :: L$
+      \Comment Retrieve all identifiers from concurrent operations
+      \State $~~~~~~~~~~~~~~~~~.filter(remoteOp \to remoteOp.isConcurrent(cc_{S'}))$
+      \State $~~~~~~~~~~~~~~~~~.map(remoteOp \to remoteOp.id)$
       \ForAll {$(id_{site}, clock_{site}, index) \in seq$}
-        \ForAll {$(id, elt) \in S$}
-          \If{$id.id_{site} = id_{site}$ AND $id.clock_{site} = clock_{site}$}
-            \State $id' \gets renameIdentifier(id, index, n)$
-            \State $mapIds.set(id, id')$
-          \EndIf
-        \EndFor
+        \State $id \gets ids.find(id \to id.id_{site} = id_{site}$ \textbf{and} $id.clock_{site} = clock_{site})$
+        \State $id' \gets renameIdentifier(id, index, n)$
+        \State $mapIds.set(id, id')$
       \EndFor
       \State \Return $mapIds$
     \EndFunction
@@ -599,11 +602,11 @@ After recomputing $mapIds$, we can resume the $renaming$ using algorithm \ref{al
 \begin{itemize}
   \item Able with this solution to get a fixed size per element in the data broadcasted
     (instead of broadcasting unbounded identifiers).
-  \item Is not an issue if we are not able to find an element of the sequence
-    in the current state
+  \item Need to browse both the state and the concurrent operations
   \begin{itemize}
-    \item Happens if the element has been deleted concurrently
-    \item Thus we won't need to rename it
+    \item A renamed identifier may have been deleted concurrently
+    \item Thus it won't be in the state
+    \item But still need it to properly rename concurrently inserted elements
   \end{itemize}
   \item Cannot factorise this algorithm with the generation of new identifiers
     for concurrent operations
