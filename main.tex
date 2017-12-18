@@ -657,6 +657,159 @@ After recomputing $mapIds$, we can resume the $renaming$ using algorithm \ref{al
   \end{itemize}
 \end{itemize}
 
+\section{Adaptation to blockwise \acp{CRDT}}
+
+\subsection{Identifier}
+
+In blockwise \acp{CRDT}, identifiers have one more component in their tuples, the \emph{offset}.
+The identifiers are thus of the following form:
+
+\begin{center}
+  $[<pos, id_{site}, clock_{site}, offset>]$
+\end{center}
+where
+\begin{itemize}
+  \item $offset: Int$, represents the index of this identifier in an identifier interval
+\end{itemize}
+
+We note the $offset$ of the last tuple of $id$ as $id.offset$.
+
+\subsection{IdentifierInterval}
+
+It represents an interval of several contiguous identifiers.
+It allows to factorise their representation.
+An identifier interval is of the following form:
+
+\begin{center}
+  $(idBegin, end)$
+\end{center}
+where
+\begin{itemize}
+  \item $idBegin: Id$, is the first identifier of this interval.
+  \item $end: Int$, is the offset of the last identifier of this interval.
+\end{itemize}
+
+We define:
+\begin{itemize}
+  \item $idInterval.get(offset)$, the function which returns the identifier $id$
+    from the interval $idInterval$ such as $offset = id.offset$.
+  \item $idInterval.begin$, an alias for $idInterval.idBegin.offset$
+\end{itemize}
+
+\paragraph{Example}~\\
+
+The identifier interval $idInterval$
+\begin{center}
+  $([<pos, id_{site}, clock_{site}, 0>], 5)$
+\end{center}
+represents the following identifiers:
+\begin{itemize}
+  \item $[<pos, id_{site}, clock_{site}, 0>]$
+  \item $[<pos, id_{site}, clock_{site}, 1>]$
+  \item $[<pos, id_{site}, clock_{site}, 2>]$
+  \item $[<pos, id_{site}, clock_{site}, 3>]$
+  \item $[<pos, id_{site}, clock_{site}, 4>]$
+  \item $[<pos, id_{site}, clock_{site}, 5>]$
+\end{itemize}
+
+\subsection{renameLocal}
+
+\paragraph{Algorithm}~\\
+
+\begin{algorithm}
+  \caption{Blocks mapping algorithm}
+  \label{alg:block-mapping}
+  \begin{algorithmic}
+    \Function{mapBlocks}{$S: State$}{$: <Int, Int, Int, Int>[]$}
+      \State $seq \gets []$
+      \ForAll{$(idInterval, elt) \in S$}
+        \State $id \gets idInterval.idBegin$
+        \State $begin \gets idInterval.begin$
+        \State $end \gets idInterval.end$
+        \State $seq \gets seq :: <id.id_{site}, id.clock_{site}, begin, end>$
+      \EndFor
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+  \caption{Local renaming algorithm}
+  \label{alg:rename-local-block}
+  \begin{algorithmic}
+    \Procedure{renameLocal}{$S: State, id_{site}: Int, clock_{site}: Int$}
+      \State $S' \gets State()$
+      \State $id' \gets [<0, id_{site}, clock_{site}, 0>]$
+      \State $idInterval' \gets (id', S.length)$
+      \State $S'.addBlock(idInterval', view(S))$
+      \State $S \gets S'$
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+\subsection{renameRemote}
+
+\paragraph{Algorithm}~\\
+
+\begin{algorithm}
+  \caption{Blocks mapping recomputation algorithm}
+  \label{alg:blocks-mapping-recomputation}
+  \begin{algorithmic}
+    \Function{recomputeMapBlocks}{$S: State, seq: <Int, Int, Int, int>[], id_{site}: Int, clock_{site}: Int$}{$: Map<IdInterval, IdInterval>$}
+      \State $mapBlocks \gets Map()$
+      \State $id' \gets [<0, id_{site}, clock_{site}, 0>]$
+      \State $ids \gets S.map((idInterval, elts) \to idInterval.idBegin)$
+      \State $ids \gets ids :: L$
+      \State $~~~~~~~~~~~~~~~~~.filter(remoteOp \to remoteOp.isConcurrent(cc_{S'}))$
+      \State $~~~~~~~~~~~~~~~~~.map(remoteOp \to remoteOp.idInterval.idBegin)$
+      \State $currentOffset \gets 0$
+      \ForAll {$(id_{site}, clock_{site}, begin, end) \in seq$}
+        \State $length \gets end - begin + 1$
+        \State $id \gets ids.find(id \to id.id_{site} = id_{site}$ \textbf{and} $id.clock_{site} = clock_{site})$
+        \State $idInterval \gets (id, begin, end)$
+        \State $idInterval' \gets (id', currentOffset, currentOffset + length)$
+        \State $mapBlocks.set(idInterval, idInterval')$
+        \State $currentOffset \gets currentOffset + length + 1$
+      \EndFor
+      \State \Return $mapBlocks$
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+  \caption{Remote renaming algorithm}
+  \label{alg:rename-remote-blocks}
+  \begin{algorithmic}
+    \Procedure{renameRemote}{$S: State, mapBlocks: Map<IdInterval, IdInterval>, cc_{S'}: StateVector$}
+    \State $S' \gets State()$
+    \State $mapBlocks' \gets mapBlocks$
+    \ForAll{$remoteOp \in concurrentOps(cc_{S'}, L)$}
+    \Comment Get concurrent operations to the renaming
+      \State $idInterval \gets remoteOp.idInterval$
+      \If{$idInterval \not\subset mapBlocks'$}
+        \State $id \gets idInterval.idBegin$
+        \State $prevIdInterval \gets prev(id, mapBlocks)$
+        \Comment Get interval containing predecessor of $id$
+        \State $prevId \gets prev(id, prevIdInterval)$
+        \Comment Get predecessor of $id$ in $prevIdInterval$
+        \State $prevIdInterval' \gets mapBlocks.get(prevIdInterval)$
+        \State $offset \gets prevId.offset - prevIdInterval.begin$
+        \State $offset' \gets prevIdInterval'.begin + offset$
+        \State $prevId' \gets prevIdInterval'.get(offset')$
+        \State $id' \gets prevId' :: id$
+        \Comment Generate new identifier by concatenating $prevId'$ and $id$
+        \State $idInterval' \gets (id', idInterval.end)$
+        \State $mapBlocks'.set(idInterval, idInterval')$
+      \EndIf
+    \EndFor
+    \ForAll{$(idInterval, elts) \in S$}
+      \State $idInterval' \gets mapBlocks.get(idInterval)$
+      \State $S'.addBlock(idInterval', elts)$
+    \EndFor
+    \State $S \gets S'$
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
 \section{Questions}
 
 \begin{itemize}
