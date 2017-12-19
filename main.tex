@@ -187,7 +187,7 @@ we use the algorithm \ref{alg:generate-id}:
       \While{$continue$}
         \State $tuple_1 \gets id_1[i]$
         \State $tuple_2 \gets id_2[i]$
-        \If{$tuple_2.pos - tuple_1.pos > 2$}
+        \If{$tuple_2.pos - tuple_1.pos > 1$}
           \State $newPos \gets randomBetween(tuple_1.pos, tuple_2.pos)$
           \State $id_3 \gets id_3 :: <newPos, id_{site}, clock_{site}>$
           \State $continue \gets false$
