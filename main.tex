@@ -507,12 +507,16 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
 
 In this algorithm, we want to replace all identifiers from the current state $S$
 by the new ones using the renaming map $mapIds$ provided by the node which
-performed the renaming.\\
+performed the renaming.
+
+
 Beforehand we have to complete $mapIds$ to also rename the identifiers of elements
 concurrently inserted to the renaming. Thus we have to generate a new identifier
 $id'$ for each $id$ concurrently inserted and add the mapping $id \to id'$ to $mapIds$.
 To do so, we browse each concurrent operation, retrieve the $id$ of the targeted
-element and generate its new identifier $id'$.\\
+element and generate its new identifier $id'$.
+
+
 To generate $id'$, we retrieve $prevId$, the predecessor of $id$ in $mapIds$.
 Since every node observes the same $id$ and $mapIds$ and thus $prevId$, we can use them to
 generate $id'$ in a deterministic manner : we get it by concatenating $prevId'$ and $id$.
@@ -584,6 +588,7 @@ $[(id_1.id_{site}, id_1.clock_{site}),
 Given such a sequence, we can then recompute $mapIds$
 using the following algorithm \ref{alg:recompute-map}:
 
+
 \begin{algorithm}
   \caption{Map recomputation algorithm}
   \label{alg:recompute-map}
@@ -606,6 +611,21 @@ using the following algorithm \ref{alg:recompute-map}:
     \EndFunction
   \end{algorithmic}
 \end{algorithm}
+
+To recompute the renaming map $mapIds$ from the received sequence $seq$,
+we have to retrieve all the renamed identifiers given their $id_{site}$ and
+$clock_{site}$.
+
+
+First, we generate the list $ids$ of all potentially renamed identifiers.
+This list contains all identifiers from the current state $S$ but also the identifiers
+of concurrent operations to the renaming, since some renamed identifiers may have
+been deleted concurrently.
+
+
+Then using this list, we can for each entry of $seq$ find the original identifier
+$id$, compute its new one $id'$ and add the mapping $id \to id'$ to $mapIds$.
+
 
 After recomputing $mapIds$, we can resume the $renaming$ using algorithm \ref{alg:remote-rename}.
 
