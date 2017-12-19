@@ -496,8 +496,6 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
           \State $id' \gets prevId' :: id$
           \Comment Generate the new identifier by concatenating $prevId'$ and $id$
           \State $mapIds'.set(id, id')$
-          \State $remoteOp' \gets generateRemoteOp(remoteOp, id')$
-          \State $broadcast(remoteOp')$
         \EndIf
       \EndFor
       \ForAll{$(id, elt) \in S$}
