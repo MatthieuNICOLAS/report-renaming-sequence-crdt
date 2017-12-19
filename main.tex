@@ -684,7 +684,7 @@ After recomputing $mapIds$, we can resume the $renaming$ using algorithm \ref{al
   \end{itemize}
 \end{itemize}
 
-\section{IN PROGRESS - Adaptation to blockwise \acp{CRDT}}
+\section{Adaptation to blockwise \acp{CRDT}}
 
 \subsection{Identifier}
 
@@ -922,6 +922,23 @@ to perform the renaming:
     \EndProcedure
   \end{algorithmic}
 \end{algorithm}
+
+We start by completing $mapBlocks'$ with the identifier intervals concurrently
+inserted to the renaming. To do so, we look for identifier intervals which are
+not already present in $mapBlocks'$. For each interval, we compute $id'$, the new
+identifier corresponding to $idInterval.idBegin$.
+
+To generate $id'$, we retrieve $prevId$, the predecessor of $id$ in $mapBlocks$.
+Since every node observes the same $id$ and $mapBlocks$ and thus $prevId$, we can use them to
+generate $id'$ in a deterministic manner : we get it by concatenating $prevId'$ and $id$.
+This allows us to generate deterministically a new identifier $id'$
+and also to preserve the order relation with other identifiers.
+Once we generated $id'$, we can generate $idInterval'$ by generating the interval
+from $id'$ to $idInterval.end$.
+
+Once $mapBlocks'$ is completed, we browse the current state $S$. For each
+block, we insert the corresponding block in $S'$. Once all elements have been
+added to $S'$, we replace the current state $S$ by the new one $S'$.
 
 \section{Questions}
 
