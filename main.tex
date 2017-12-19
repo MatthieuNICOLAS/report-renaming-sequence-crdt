@@ -509,13 +509,11 @@ In this algorithm, we want to replace all identifiers from the current state $S$
 by the new ones using the renaming map $mapIds$ provided by the node which
 performed the renaming.
 
-
 Beforehand we have to complete $mapIds$ to also rename the identifiers of elements
 concurrently inserted to the renaming. Thus we have to generate a new identifier
 $id'$ for each $id$ concurrently inserted and add the mapping $id \to id'$ to $mapIds$.
 To do so, we browse each concurrent operation, retrieve the $id$ of the targeted
 element and generate its new identifier $id'$.
-
 
 To generate $id'$, we retrieve $prevId$, the predecessor of $id$ in $mapIds$.
 Since every node observes the same $id$ and $mapIds$ and thus $prevId$, we can use them to
@@ -616,16 +614,13 @@ To recompute the renaming map $mapIds$ from the received sequence $seq$,
 we have to retrieve all the renamed identifiers given their $id_{site}$ and
 $clock_{site}$.
 
-
 First, we generate the list $ids$ of all potentially renamed identifiers.
 This list contains all identifiers from the current state $S$ but also the identifiers
 of concurrent operations to the renaming, since some renamed identifiers may have
 been deleted concurrently.
 
-
 Then using this list, we can for each entry of $seq$ find the original identifier
 $id$, compute its new one $id'$ and add the mapping $id \to id'$ to $mapIds$.
-
 
 After recomputing $mapIds$, we can resume the $renaming$ using algorithm \ref{alg:remote-rename}.
 
@@ -689,7 +684,7 @@ After recomputing $mapIds$, we can resume the $renaming$ using algorithm \ref{al
   \end{itemize}
 \end{itemize}
 
-\section{Adaptation to blockwise \acp{CRDT}}
+\section{IN PROGRESS - Adaptation to blockwise \acp{CRDT}}
 
 \subsection{Identifier}
 
@@ -746,13 +741,73 @@ represents the following identifiers:
 
 \subsection{renameLocal}
 
+As previously, $renameLocal$ allows us to reduce the size of the identifiers
+of the data structure. But in blockwise \acp{CRDT}, we can also take advantage
+of the renaming to merge existing blocks into one.
+
 \paragraph{Algorithm}~\\
+
+The following algorithm \ref{alg:rename-local-block} describes how to perform
+the renaming of the current state :
+
+\begin{algorithm}
+  \caption{Local renaming algorithm}
+  \label{alg:rename-local-block}
+  \begin{algorithmic}
+    \Procedure{renameLocal}{$S: State, id_{site}: Int, clock_{site}: Int$}
+      \State $id' \gets [<0, id_{site}, clock_{site}, 0>]$
+      \State $idInterval' \gets (id', S.length)$
+      \State $S' \gets State()$
+      \State $S'.addBlock(idInterval', view(S))$
+      \State $S \gets S'$
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+We generate a new identifier interval $idInterval'$.
+We attached to this interval the whole content of the current state $S$, $view(S)$.
+The resulting block is then added to a blank state $S'$.
+
+Finally, we replace the current state $S$ by $S'$.
+
+\subsection{generateRenamingSequence}
+
+As previously, we need to share with other nodes a mapping between the existing
+identifier intervals to the new one. And, since the renaming is again deterministic,
+we are able to optimise the amount of data to broadcast.
+
+However, since in this case we are using identifier intervals, we have to share
+additional data : the bounds of the interval $begin$ and $end$.
+
+Thus we will broadcast to other nodes a sequence composed of entries with the following form :
+
+\begin{center}
+  $<id_{site}, clock_{site}, begin, end>$
+\end{center}
+
+\paragraph{Example}~\\
+
+Instead of broadcasting
+\begin{center}
+  $[idInterval_1, idInterval_2, idInterval_3]$,
+\end{center}
+we only need to broadcast to other nodes
+\begin{center}
+  $[(idInterval_1.id_{site}, idInterval_1.clock_{site}, idInterval_1.begin, idInterval_1.end),$\\
+  $(idInterval_2.id_{site}, idInterval_2.clock_{site}, idInterval_2.begin, idInterval_2.end),$\\
+  $(idInterval_3.id_{site}, idInterval_3.clock_{site}, idInterval_3.begin, idInterval_3.end)]$.
+\end{center}
+
+\paragraph{Algorithm}~\\
+
+The following algorithm \ref{alg:block-mapping} describes how to generate such a
+sequence :
 
 \begin{algorithm}
   \caption{Blocks mapping algorithm}
   \label{alg:block-mapping}
   \begin{algorithmic}
-    \Function{mapBlocks}{$S: State$}{$: <Int, Int, Int, Int>[]$}
+    \Function{generateRenamingSequence}{$S: State$}{$: <Int, Int, Int, Int>[]$}
       \State $seq \gets []$
       \ForAll{$(idInterval, elt) \in S$}
         \State $id \gets idInterval.idBegin$
@@ -764,31 +819,21 @@ represents the following identifiers:
   \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}
-  \caption{Local renaming algorithm}
-  \label{alg:rename-local-block}
-  \begin{algorithmic}
-    \Procedure{renameLocal}{$S: State, id_{site}: Int, clock_{site}: Int$}
-      \State $S' \gets State()$
-      \State $id' \gets [<0, id_{site}, clock_{site}, 0>]$
-      \State $idInterval' \gets (id', S.length)$
-      \State $S'.addBlock(idInterval', view(S))$
-      \State $S \gets S'$
-    \EndProcedure
-  \end{algorithmic}
-\end{algorithm}
+\subsection{recomputeMapBlocks}
 
-\subsection{renameRemote}
+When receiving the $renaming$ operation, other nodes have first to recompute
+the blocks renaming map.
 
 \paragraph{Algorithm}~\\
+
+The following algorithm \ref{alg:blocks-mapping-recomputation} describes how to do so:
 
 \begin{algorithm}
   \caption{Blocks mapping recomputation algorithm}
   \label{alg:blocks-mapping-recomputation}
   \begin{algorithmic}
-    \Function{recomputeMapBlocks}{$S: State, seq: <Int, Int, Int, int>[], id_{site}: Int, clock_{site}: Int$}{$: Map<IdInterval, IdInterval>$}
+    \Function{recomputeMapBlocks}{$S: State, seq: <Int, Int, Int, Int>[], id_{site}: Int, clock_{site}: Int$}{$: Map<IdInterval, IdInterval>$}
       \State $mapBlocks \gets Map()$
-      \State $id' \gets [<0, id_{site}, clock_{site}, 0>]$
       \State $ids \gets S.map((idInterval, elts) \to idInterval.idBegin)$
       \State $ids \gets ids :: L$
       \State $~~~~~~~~~~~~~~~~~.filter(remoteOp \to remoteOp.isConcurrent(cc_{S'}))$
@@ -797,15 +842,51 @@ represents the following identifiers:
       \ForAll {$(id_{site}, clock_{site}, begin, end) \in seq$}
         \State $length \gets end - begin + 1$
         \State $id \gets ids.find(id \to id.id_{site} = id_{site}$ \textbf{and} $id.clock_{site} = clock_{site})$
-        \State $idInterval \gets (id, begin, end)$
-        \State $idInterval' \gets (id', currentOffset, currentOffset + length)$
+        \State $id.offset \gets begin$
+        \Comment The found occurrence may not have the correct offset, so we replace it
+        \State $idInterval \gets (id, end)$
+        \State $id' \gets [<0, id_{site}, clock_{site}, currentOffset>]$
+        \State $idInterval' \gets (id', currentOffset + length - 1)$
         \State $mapBlocks.set(idInterval, idInterval')$
-        \State $currentOffset \gets currentOffset + length + 1$
+        \State $currentOffset \gets currentOffset + length$
       \EndFor
       \State \Return $mapBlocks$
     \EndFunction
   \end{algorithmic}
 \end{algorithm}
+
+To recompute the blocks renaming map $mapBlocks$ from the received sequence $seq$,
+we have to retrieve all the renamed identifier intervals given their $id_{site}$,
+$clock_{site}$, $begin$ and $end$.
+
+First, we generate the list $ids$ of all potentially renamed identifiers.
+This list contains all identifiers from the current state $S$ but also the identifiers
+of concurrent operations to the renaming, since some renamed identifiers may have
+been deleted concurrently.
+
+Then using this list, we can for each entry of $seq$ find the original identifier
+$id$ and compute its new one $id'$.
+We can then recreate the original interval $idInterval$ using $id$, $begin$ and $end$
+and generate its image $idInterval'$.
+
+Finally, we add the mapping $idInterval \to idInterval'$ to $mapBlocks$.
+
+\subsection{renameRemote}
+
+Once $mapBlocks$ is recomputed, we can proceed to the renaming of the current
+state $S$.
+
+As previously, some differences may exist between the current state and the state $S'$
+on which the renaming operation has been performed since some concurrent operations
+may have been applied to current state.
+
+Thus we need to be able to also rename deterministically the concurrently
+inserted identifiers intervals.
+
+\paragraph{Algorithm}~\\
+
+The following algorithm \ref{alg:rename-remote-blocks} describes how
+to perform the renaming:
 
 \begin{algorithm}
   \caption{Remote renaming algorithm}
