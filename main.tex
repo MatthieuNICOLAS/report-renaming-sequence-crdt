@@ -505,6 +505,20 @@ we have to perform the following algorithm \ref{alg:remote-rename} to apply it:
   \end{algorithmic}
 \end{algorithm}
 
+In this algorithm, we want to replace all identifiers from the current state $S$
+by the new ones using the renaming map $mapIds$ provided by the node which
+performed the renaming.\\
+Beforehand we have to complete $mapIds$ to also rename the identifiers of elements
+concurrently inserted to the renaming. Thus we have to generate a new identifier
+$id'$ for each $id$ concurrently inserted and add the mapping $id \to id'$ to $mapIds$.
+To do so, we browse each concurrent operation, retrieve the $id$ of the targeted
+element and generate its new identifier $id'$.\\
+To generate $id'$, we retrieve $prevId$, the predecessor of $id$ in $mapIds$.
+Since every node observes the same $id$ and $mapIds$ and thus $prevId$, we can use them to
+generate $id'$ in a deterministic manner : we get it by concatenating $prevId'$ and $id$.
+This allows us to generate deterministically a new identifier $id'$
+and also to preserve the order relation with other identifiers.
+
 \paragraph{Limits}~\\
 
 \begin{itemize}
